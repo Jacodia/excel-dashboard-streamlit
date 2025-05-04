@@ -1,109 +1,99 @@
-import streamlit as st
 import pandas as pd
 import plotly.express as px
+import streamlit as st
 
-# --- Page setup ---
-st.set_page_config(page_title="📊 Project Dashboard", layout="wide")
+# Load CSV data
+df = pd.read_csv('your_file.csv')
 
-# --- Load data ---
-@st.cache_data
-def load_data():
-    return pd.read_excel("Excel_Dashboard_Data_Prepared.xlsx")
+# --- Clean Data ---
+# Strip column names to ensure no extra spaces
+df.columns = df.columns.str.strip()
 
-df = load_data()
+# Convert 'Expected completion Percentage' to numeric (handle non-numeric as NaN)
+df['Expected completion Percentage'] = pd.to_numeric(df['Expected completion Percentage'], errors='coerce')
 
-# --- Clean column names to remove any extra spaces or hidden characters ---
-df.columns = df.columns.str.strip()  # Removes leading/trailing spaces
+# Convert 'Commencement' and 'Revised Completion' to datetime
+df['Commencement (Contract Signing Date/site handover)'] = pd.to_datetime(df['Commencement (Contract Signing Date/site handover)'], errors='coerce')
+df['Revised Completion'] = pd.to_datetime(df['Revised Completion'], errors='coerce')
 
-# --- Generate "Projects in Execution" column if it doesn't exist ---
-if "Projects in Execution" not in df.columns:
-    # Example: Generate a new column based on "Project Status" or other columns
-    df['Projects in Execution'] = df['Project Status'].apply(lambda x: 'In Execution' if x == 'In Progress' else 'Not in Execution')
+# --- Streamlit Sidebar ---
+st.sidebar.title("Project Dashboard")
+status = st.sidebar.multiselect("Select Project Status", options=df["Project Status"].dropna().unique())
 
-# --- Display column names to help with debugging ---
-st.subheader("🧾 Column Names in Excel")
-st.write(df.columns.tolist())
-
-# --- Sidebar filters ---
-st.sidebar.header("🔍 Filter")
-projects = st.sidebar.multiselect("Select Projects", options=df["Projects in Execution"].dropna().unique())
-status = st.sidebar.multiselect("Select Status", options=df["Project Status"].dropna().unique())
-
-# --- Filter logic ---
+# --- Filter Data Based on Status ---
 filtered_df = df.copy()
-if projects:
-    filtered_df = filtered_df[filtered_df["Projects in Execution"].isin(projects)]
+
 if status:
     filtered_df = filtered_df[filtered_df["Project Status"].isin(status)]
 
-# --- Title ---
-st.title("🚀 Project Dashboard")
-st.markdown("Visualizing execution, status, and timeline metrics from the uploaded Excel data.")
+# --- View Data ---
+if st.sidebar.checkbox("Show Data"):
+    st.write(filtered_df)
 
-# --- Show DataFrame preview ---
-with st.expander("🔍 View Data"):
-    st.dataframe(filtered_df, use_container_width=True)
+# --- Basic Visuals ---
 
-# --- KPI Summary ---
-col1, col2, col3 = st.columns(3)
-col1.metric("📁 Total Projects", len(filtered_df))
-col2.metric("✅ Completed", int((filtered_df["Project Status"] == "Completed").sum()))
-col3.metric("🚧 In Progress", int((filtered_df["Project Status"] == "In Progress").sum()))
+# Total Projects Count
+total_projects = len(filtered_df)
+completed_projects = len(filtered_df[filtered_df["Project Status"] == "Completed"])
+in_progress_projects = len(filtered_df[filtered_df["Project Status"] == "In Progress"])
 
-# --- Chart 1: Project Count by Status ---
-if "Project Status" in filtered_df.columns:
-    fig1 = px.bar(
-        filtered_df["Project Status"].value_counts().reset_index(),
-        x="index", y="Project Status",
-        labels={"index": "Status", "Project Status": "Count"},
-        title="📌 Project Count by Status"
-    )
-    st.plotly_chart(fig1, use_container_width=True)
+st.subheader(f"Total Projects: {total_projects}")
+st.subheader(f"Completed Projects: {completed_projects}")
+st.subheader(f"In Progress Projects: {in_progress_projects}")
 
-# --- Chart 2: Projects by Department (if available) ---
-if "Department" in filtered_df.columns:
-    fig2 = px.pie(
-        filtered_df,
-        names="Department",
-        title="🏢 Projects by Department"
-    )
-    st.plotly_chart(fig2, use_container_width=True)
+# Bar Chart: Project Status Distribution
+fig1 = px.bar(
+    filtered_df, 
+    x="Project Status",  # Project Status
+    title="Project Status Distribution",
+    labels={"Project Status": "Status", "count": "Number of Projects"},
+    color="Project Status",
+    category_orders={"Project Status": ["Completed", "In Progress", "Not Started"]}  # Custom order if needed
+)
+st.plotly_chart(fig1)
 
-# --- Chart 3: Duration Histogram (if available) ---
-if "Duration in Days" in filtered_df.columns:
-    fig3 = px.histogram(
-        filtered_df,
-        x="Duration in Days",
-        nbins=20,
-        title="⏳ Distribution of Project Durations"
-    )
-    st.plotly_chart(fig3, use_container_width=True)
+# Line Chart: Time Lapse vs. Expected Completion
+fig2 = px.line(
+    filtered_df, 
+    x="Time Lapse in days", 
+    y="Expected completion Percentage", 
+    title="Time Lapse vs Expected Completion Percentage"
+)
+st.plotly_chart(fig2)
 
-# --- Chart 4: Duration vs Time Lapse per Project ---
-if "Duration in Days" in filtered_df.columns and "Time lapse in Days" in filtered_df.columns:
-    comparison_df = filtered_df[["Projects in Execution", "Duration in Days", "Time lapse in Days"]].dropna()
+# Budget vs Actual Cost
+fig3 = px.scatter(
+    filtered_df,
+    x="Total Budget / Contract Value in N$",
+    y="Actual Cost to Date (Mil)",
+    title="Budget vs Actual Cost",
+    labels={"Total Budget / Contract Value in N$": "Total Budget (N$)", "Actual Cost to Date (Mil)": "Actual Cost (Mil)"}
+)
+st.plotly_chart(fig3)
 
-    if not comparison_df.empty:
-        fig4 = px.bar(
-            comparison_df.melt(id_vars="Projects in Execution", value_vars=["Duration in Days", "Time lapse in Days"]),
-            x="Projects in Execution",
-            y="value",
-            color="variable",
-            barmode="group",
-            title="📊 Duration vs Time Lapse per Project",
-            labels={"value": "Days", "variable": "Metric"},
-        )
-        st.plotly_chart(fig4, use_container_width=True)
-    else:
-        st.info("ℹ️ Not enough data to compare Duration and Time Lapse.")
-else:
-    st.info("ℹ️ Columns for Duration or Time Lapse are missing.")
+# --- Duration Overview ---
+fig4 = px.histogram(
+    filtered_df,
+    x="Duration in days",
+    title="Project Duration Distribution",
+    nbins=20
+)
+st.plotly_chart(fig4)
 
-# --- Download Option ---
-with st.expander("⬇️ Download Filtered Data"):
-    st.download_button(
-        label="Download as Excel",
-        data=filtered_df.to_excel(index=False),
-        file_name="filtered_projects.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+# --- Date Range: Projects Started in a Specific Year ---
+year_filter = st.sidebar.slider(
+    "Select Year for Projects Commenced",
+    min_value=int(df["Commencement (Contract Signing Date/site handover)"].dt.year.min()),
+    max_value=int(df["Commencement (Contract Signing Date/site handover)"].dt.year.max()),
+    value=(int(df["Commencement (Contract Signing Date/site handover)"].dt.year.min()), int(df["Commencement (Contract Signing Date/site handover)"].dt.year.max()))
+)
+
+filtered_year_df = filtered_df[
+    (filtered_df["Commencement (Contract Signing Date/site handover)"].dt.year >= year_filter[0]) &
+    (filtered_df["Commencement (Contract Signing Date/site handover)"].dt.year <= year_filter[1])
+]
+
+# Show filtered projects based on year selection
+st.subheader(f"Projects Commenced Between {year_filter[0]} and {year_filter[1]}")
+st.write(filtered_year_df)
+
