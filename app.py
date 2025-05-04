@@ -63,7 +63,39 @@ fig3 = px.pie(
     title="🏛️ Projects by Public Entity",
 )
 st.plotly_chart(fig3, use_container_width=True)
+# --- Chart 8: Average Project Completion % per Project ---
+st.markdown("### 📊 Average Completion Percentage per Project")
 
+# Filter out rows without completion percentage or project names
+completion_df = filtered_df[
+    (filtered_df["Projects in Execution"].notna()) &
+    (filtered_df["Average completion Percentage"].notna())
+]
+
+# Convert to numeric in case data is read as string
+completion_df["Average completion Percentage"] = pd.to_numeric(
+    completion_df["Average completion Percentage"], errors="coerce"
+)
+
+# Create the bar chart
+fig8 = px.bar(
+    completion_df,
+    x="Average completion Percentage",
+    y="Projects in Execution",
+    orientation="h",
+    title="📈 Average Completion Percentage per Project",
+    labels={"Average completion Percentage": "Avg Completion %", "Projects in Execution": "Project"},
+    color="Average completion Percentage",
+    color_continuous_scale="Blues"
+)
+
+fig8.update_layout(
+    xaxis=dict(title="Average Completion (%)"),
+    yaxis=dict(title="Project"),
+    height=800
+)
+
+st.plotly_chart(fig8, use_container_width=True)
 
 
 # --- Chart 6: Total Projects by Contractor as Pie Chart with Counts ---
