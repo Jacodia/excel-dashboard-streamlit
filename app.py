@@ -9,9 +9,6 @@ st.title("🚀 Central Procurment Board of Namibia: Monitoring and Evaluation Pr
 # Replace 'your_file.csv' with your actual filename
 df = pd.read_excel('Excel_Dashboard_Data_Prepared.xlsx')
 
-# Replace with your actual filename
-df = pd.read_csv("your_file.csv")
-
 # --- Clean Columns and Convert Data Types ---
 df.columns = df.columns.str.strip()
 
