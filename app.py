@@ -94,9 +94,31 @@ fig5 = px.histogram(
 )
 st.plotly_chart(fig5, use_container_width=True)
 
-# --- Chart 6: Total Projects by Contractor ---
-contractor_counts = filtered_df["Contractor/ Service Provider"].value_counts().reset_index()
+# --- Chart 6: Total Projects by Contractor with Dropdown Filter ---
+st.markdown("### 🔧 Total Projects by Contractor/Service Provider")
+
+# Unique contractor list for filter
+contractor_options = filtered_df["Contractor/ Service Provider"].dropna().unique()
+
+# Multiselect dropdown in sidebar or main layout
+selected_contractors = st.multiselect(
+    "Select Contractor(s) to View", options=contractor_options, default=contractor_options
+)
+
+# Filter data based on selection
+contractor_filtered_df = filtered_df[
+    filtered_df["Contractor/ Service Provider"].isin(selected_contractors)
+]
+
+# Count projects per selected contractor
+contractor_counts = (
+    contractor_filtered_df["Contractor/ Service Provider"]
+    .value_counts()
+    .reset_index()
+)
 contractor_counts.columns = ["Contractor/Service Provider", "Total Projects"]
+
+# Generate chart
 fig6 = px.bar(
     contractor_counts,
     x="Contractor/Service Provider",
