@@ -143,3 +143,33 @@ st.download_button(
     file_name="filtered_projects.csv",
     mime="text/csv",
 )
+
+# --- Chart 7: Budget vs Actual Cost by Project ---
+st.markdown("### 💰 Budget vs Actual Cost by Project")
+
+# Filter out rows with missing or zero budget or cost
+budget_vs_actual_df = filtered_df[
+    (filtered_df["Projects in Execution"].notna()) &
+    (filtered_df["Total Budget / Contract Value in N$"].notna()) &
+    (filtered_df["Actual Cost to Date (Mil)"].notna())
+]
+
+# Create the bar chart
+fig7 = px.bar(
+    budget_vs_actual_df,
+    x="Projects in Execution",
+    y=[
+        "Total Budget / Contract Value in N$",
+        "Actual Cost to Date (Mil)"
+    ],
+    barmode="group",
+    title="💰 Budget vs Actual Cost by Project",
+    labels={
+        "value": "Amount (N$ Mil)",
+        "variable": "Metric",
+        "Projects in Execution": "Project"
+    }
+)
+
+fig7.update_layout(xaxis_tickangle=-45)
+st.plotly_chart(fig7, use_container_width=True)
