@@ -3,7 +3,7 @@ import plotly.express as px
 import streamlit as st
 
 # Load CSV data
-df = pd.read_csv('your_file.csv')
+df = pd.read_csv('Excel_Dashboard_Data_Prepared.xls')
 
 # --- Clean Data ---
 # Strip column names to ensure no extra spaces
