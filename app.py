@@ -1,44 +1,45 @@
+
 import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Page config
-st.set_page_config(page_title="Interactive Excel Dashboard", layout="wide")
-
-# Title
-st.title("📊 Interactive Dashboard from Excel")
-
-# Upload or use local Excel
+# Load data
 df = pd.read_excel("Excel_Dashboard_Data_Prepared.xlsx")
 
+# Title
+st.title("📊 Project Dashboard - Streamlit Web App")
+
 # Sidebar filters
-st.sidebar.header("🔍 Filters")
-if 'Region' in df.columns:
-    region = st.sidebar.multiselect("Region", options=df['Region'].unique(), default=df['Region'].unique())
-    df = df[df['Region'].isin(region)]
+entity_filter = st.sidebar.multiselect("Filter by Public Entity", options=df["Public Entity's Name"].unique(), default=df["Public Entity's Name"].unique())
+category_filter = st.sidebar.multiselect("Filter by Procurement Category", options=df["Procurement Category"].dropna().unique(), default=df["Procurement Category"].dropna().unique())
 
-if 'Category' in df.columns:
-    category = st.sidebar.multiselect("Category", options=df['Category'].unique(), default=df['Category'].unique())
-    df = df[df['Category'].isin(category)]
+# Apply filters
+filtered_df = df[
+    (df["Public Entity's Name"].isin(entity_filter)) &
+    (df["Procurement Category"].isin(category_filter))
+]
 
-# Show data
-st.subheader("📄 Preview Data")
-st.dataframe(df, use_container_width=True)
+# Bar chart - Average completion % by Procurement Category
+if not filtered_df.empty:
+    bar_chart = filtered_df.groupby("Procurement Category")["Average completion Percentage"].mean().reset_index()
+    fig1 = px.bar(bar_chart, x="Procurement Category", y="Average completion Percentage", title="🔧 Avg Completion % by Procurement Category")
+    st.plotly_chart(fig1)
 
-# Charts
-st.subheader("📈 Charts")
+    # Line chart - Actual Cost over time
+    cost_time_df = filtered_df.copy()
+    cost_time_df["Commencement Date"] = pd.to_datetime(cost_time_df["Commencement (Contract Signing Date/site handover)"], errors='coerce')
+    cost_time_df = cost_time_df.sort_values("Commencement Date")
+    fig2 = px.line(cost_time_df, x="Commencement Date", y="Actual Cost to Date (Mil)", color="Projects in Execution", title="💰 Cost to Date Over Time")
+    st.plotly_chart(fig2)
 
-# Example Chart 1: Sales by Region
-if 'Region' in df.columns and 'Sales' in df.columns:
-    fig1 = px.bar(df.groupby('Region')['Sales'].sum().reset_index(), x='Region', y='Sales', title="Sales by Region")
-    st.plotly_chart(fig1, use_container_width=True)
+    # Pie chart - Project distribution by Public Entity
+    pie_df = filtered_df["Public Entity's Name"].value_counts().reset_index()
+    pie_df.columns = ["Public Entity", "Count"]
+    fig3 = px.pie(pie_df, values="Count", names="Public Entity", title="🏛️ Project Count by Public Entity")
+    st.plotly_chart(fig3)
 
-# Example Chart 2: Sales over Time
-if 'Date' in df.columns and 'Sales' in df.columns:
-    df['Date'] = pd.to_datetime(df['Date'])
-    time_df = df.groupby('Date')['Sales'].sum().reset_index()
-    fig2 = px.line(time_df, x='Date', y='Sales', title="Sales Over Time")
-    st.plotly_chart(fig2, use_container_width=True)
+    # Download filtered data
+    st.download_button("📥 Download Filtered Data", filtered_df.to_csv(index=False), file_name="filtered_projects.csv", mime="text/csv")
 
-# Export data
-st.download_button("📥 Download Filtered Data", df.to_csv(index=False), file_name="filtered_data.csv")
+else:
+    st.warning("⚠️ No data matches the selected filters.")
