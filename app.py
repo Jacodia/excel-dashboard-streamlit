@@ -94,23 +94,23 @@ fig5 = px.histogram(
 )
 st.plotly_chart(fig5, use_container_width=True)
 
-# --- Chart 6: Total Projects by Contractor with Dropdown Filter ---
-st.markdown("### 🔧 Total Projects by Contractor/Service Provider")
+# --- Chart 6: Total Projects by Contractor as Pie Chart ---
+st.markdown("### 🥧 Total Projects by Contractor/Service Provider (Pie Chart)")
 
 # Unique contractor list for filter
 contractor_options = filtered_df["Contractor/ Service Provider"].dropna().unique()
 
-# Multiselect dropdown in sidebar or main layout
+# Multiselect dropdown to filter contractors
 selected_contractors = st.multiselect(
     "Select Contractor(s) to View", options=contractor_options, default=contractor_options
 )
 
-# Filter data based on selection
+# Filter the DataFrame based on selected contractors
 contractor_filtered_df = filtered_df[
     filtered_df["Contractor/ Service Provider"].isin(selected_contractors)
 ]
 
-# Count projects per selected contractor
+# Count total projects per selected contractor
 contractor_counts = (
     contractor_filtered_df["Contractor/ Service Provider"]
     .value_counts()
@@ -118,15 +118,13 @@ contractor_counts = (
 )
 contractor_counts.columns = ["Contractor/Service Provider", "Total Projects"]
 
-# Generate chart
-fig6 = px.bar(
+# Create pie chart
+fig6 = px.pie(
     contractor_counts,
-    x="Contractor/Service Provider",
-    y="Total Projects",
-    title="🔧 Total Projects by Contractor/Service Provider",
-    labels={"Contractor/Service Provider": "Contractor"},
+    values="Total Projects",
+    names="Contractor/Service Provider",
+    title="🥧 Total Projects by Contractor/Service Provider"
 )
-fig6.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig6, use_container_width=True)
 
 # --- View Data Table ---
