@@ -7,7 +7,7 @@ st.set_page_config(page_title="📊 Project Dashboard", layout="wide")
 st.title("🚀 Project Execution Dashboard")
 
 # Replace 'your_file.csv' with your actual filename
-df = pd.read_csv("your_file.csv")
+df = pd.read_excel("'Excel_Dashboard_Data_Prepared.xlsx')
 
 # --- Clean Columns and Convert Data Types ---
 df.columns = df.columns.str.strip()
