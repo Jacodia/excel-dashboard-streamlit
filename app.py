@@ -144,7 +144,7 @@ st.download_button(
     mime="text/csv",
 )
 
-# --- Chart 7: Budget vs Actual Cost by Project ---
+# --- Chart 7: Budget vs Actual Cost by Project (Stacked & Horizontal) ---
 st.markdown("### 💰 Budget vs Actual Cost by Project")
 
 # Filter out rows with missing or zero budget or cost
@@ -154,22 +154,31 @@ budget_vs_actual_df = filtered_df[
     (filtered_df["Actual Cost to Date (Mil)"].notna())
 ]
 
-# Create the bar chart
-fig7 = px.bar(
-    budget_vs_actual_df,
-    x="Projects in Execution",
-    y=[
-        "Total Budget / Contract Value in N$",
-        "Actual Cost to Date (Mil)"
-    ],
-    barmode="group",
-    title="💰 Budget vs Actual Cost by Project",
-    labels={
-        "value": "Amount (N$ Mil)",
-        "variable": "Metric",
-        "Projects in Execution": "Project"
-    }
+# Melt the dataframe for stacked plotting
+melted_df = budget_vs_actual_df.melt(
+    id_vars="Projects in Execution",
+    value_vars=["Total Budget / Contract Value in N$", "Actual Cost to Date (Mil)"],
+    var_name="Metric",
+    value_name="Amount"
 )
 
-fig7.update_layout(xaxis_tickangle=-45)
+# Create the stacked horizontal bar chart
+fig7 = px.bar(
+    melted_df,
+    y="Projects in Execution",
+    x="Amount",
+    color="Metric",
+    orientation="h",
+    title="💰 Budget vs Actual Cost by Project (Stacked)",
+    labels={"Amount": "Amount (N$ Mil)", "Projects in Execution": "Project"},
+)
+
+fig7.update_layout(
+    yaxis=dict(title="Project"),
+    xaxis=dict(title="Amount (N$ Mil)"),
+    legend_title="Metric",
+    barmode="stack",
+    height=800
+)
+
 st.plotly_chart(fig7, use_container_width=True)
