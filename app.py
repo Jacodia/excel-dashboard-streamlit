@@ -28,26 +28,11 @@ status = st.sidebar.multiselect(
     "Select Project Status", options=df["Project Status"].dropna().unique()
 )
 
-year_range = st.sidebar.slider(
-    "Select Project Commencement Year Range",
-    int(df["Commencement (Contract Signing Date/site handover)"].dt.year.min()),
-    int(df["Commencement (Contract Signing Date/site handover)"].dt.year.max()),
-    (
-        int(df["Commencement (Contract Signing Date/site handover)"].dt.year.min()),
-        int(df["Commencement (Contract Signing Date/site handover)"].dt.year.max()),
-    ),
-)
-
 # --- Filter Data ---
 filtered_df = df.copy()
 
 if status:
     filtered_df = filtered_df[filtered_df["Project Status"].isin(status)]
-
-filtered_df = filtered_df[
-    filtered_df["Commencement (Contract Signing Date/site handover)"]
-    .dt.year.between(year_range[0], year_range[1])
-]
 
 # --- Project Summary ---
 st.markdown("### 🧾 Project Summary")
