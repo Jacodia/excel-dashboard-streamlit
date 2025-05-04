@@ -2,98 +2,121 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# Load CSV data
-df = pd.read_excel('Excel_Dashboard_Data_Prepared.xlsx')
+# --- Load CSV ---
+st.set_page_config(page_title="📊 Project Dashboard", layout="wide")
+st.title("🚀 Project Execution Dashboard")
 
-# --- Clean Data ---
-# Strip column names to ensure no extra spaces
+# Replace 'your_file.csv' with your actual filename
+df = pd.read_csv("your_file.csv")
+
+# --- Clean Columns and Convert Data Types ---
 df.columns = df.columns.str.strip()
 
-# Convert 'Expected completion Percentage' to numeric (handle non-numeric as NaN)
-df['Expected completion Percentage'] = pd.to_numeric(df['Expected completion Percentage'], errors='coerce')
+df["Expected completion Percentage"] = pd.to_numeric(
+    df["Expected completion Percentage"], errors="coerce"
+)
+df["Commencement (Contract Signing Date/site handover)"] = pd.to_datetime(
+    df["Commencement (Contract Signing Date/site handover)"], errors="coerce"
+)
+df["Revised Completion"] = pd.to_datetime(
+    df["Revised Completion"], errors="coerce"
+)
 
-# Convert 'Commencement' and 'Revised Completion' to datetime
-df['Commencement (Contract Signing Date/site handover)'] = pd.to_datetime(df['Commencement (Contract Signing Date/site handover)'], errors='coerce')
-df['Revised Completion'] = pd.to_datetime(df['Revised Completion'], errors='coerce')
+# --- Sidebar Filters ---
+st.sidebar.header("🔍 Filter Options")
+status = st.sidebar.multiselect(
+    "Select Project Status", options=df["Project Status"].dropna().unique()
+)
 
-# --- Streamlit Sidebar ---
-st.sidebar.title("Project Dashboard")
-status = st.sidebar.multiselect("Select Project Status", options=df["Project Status"].dropna().unique())
+year_range = st.sidebar.slider(
+    "Select Project Commencement Year Range",
+    int(df["Commencement (Contract Signing Date/site handover)"].dt.year.min()),
+    int(df["Commencement (Contract Signing Date/site handover)"].dt.year.max()),
+    (
+        int(df["Commencement (Contract Signing Date/site handover)"].dt.year.min()),
+        int(df["Commencement (Contract Signing Date/site handover)"].dt.year.max()),
+    ),
+)
 
-# --- Filter Data Based on Status ---
+# --- Filter Data ---
 filtered_df = df.copy()
 
 if status:
     filtered_df = filtered_df[filtered_df["Project Status"].isin(status)]
 
-# --- View Data ---
-if st.sidebar.checkbox("Show Data"):
-    st.write(filtered_df)
+filtered_df = filtered_df[
+    filtered_df["Commencement (Contract Signing Date/site handover)"]
+    .dt.year.between(year_range[0], year_range[1])
+]
 
-# --- Basic Visuals ---
+# --- Project Summary ---
+st.markdown("### 🧾 Project Summary")
+col1, col2, col3 = st.columns(3)
+col1.metric("📁 Total Projects", len(filtered_df))
+col2.metric("✅ Completed", len(filtered_df[filtered_df["Project Status"] == "Completed"]))
+col3.metric("🚧 In Progress", len(filtered_df[filtered_df["Project Status"] == "In Progress"]))
 
-# Total Projects Count
-total_projects = len(filtered_df)
-completed_projects = len(filtered_df[filtered_df["Project Status"] == "Completed"])
-in_progress_projects = len(filtered_df[filtered_df["Project Status"] == "In Progress"])
-
-st.subheader(f"Total Projects: {total_projects}")
-st.subheader(f"Completed Projects: {completed_projects}")
-st.subheader(f"In Progress Projects: {in_progress_projects}")
-
-# Bar Chart: Project Status Distribution
+# --- Chart 1: Project Status Distribution ---
 fig1 = px.bar(
-    filtered_df, 
-    x="Project Status",  # Project Status
-    title="Project Status Distribution",
-    labels={"Project Status": "Status", "count": "Number of Projects"},
+    filtered_df,
+    x="Project Status",
+    title="📌 Project Status Distribution",
     color="Project Status",
-    category_orders={"Project Status": ["Completed", "In Progress", "Not Started"]}  # Custom order if needed
+    labels={"count": "Number of Projects"},
 )
-st.plotly_chart(fig1)
+st.plotly_chart(fig1, use_container_width=True)
 
-# Line Chart: Time Lapse vs. Expected Completion
-fig2 = px.line(
-    filtered_df, 
-    x="Time Lapse in days", 
-    y="Expected completion Percentage", 
-    title="Time Lapse vs Expected Completion Percentage"
+# --- Chart 2: Time Lapse vs. Expected Completion ---
+fig2 = px.scatter(
+    filtered_df,
+    x="Time Lapse in days",
+    y="Expected completion Percentage",
+    title="📈 Time Lapse vs Expected Completion",
+    labels={"Time Lapse in days": "Days", "Expected completion Percentage": "% Complete"},
 )
-st.plotly_chart(fig2)
+st.plotly_chart(fig2, use_container_width=True)
 
-# Budget vs Actual Cost
-fig3 = px.scatter(
+# --- Chart 3: Project Count by Entity ---
+project_count = filtered_df["Public Entity's Name"].value_counts().reset_index()
+project_count.columns = ["Public Entity", "Count"]
+fig3 = px.pie(
+    project_count,
+    values="Count",
+    names="Public Entity",
+    title="🏛️ Projects by Public Entity",
+)
+st.plotly_chart(fig3, use_container_width=True)
+
+# --- Chart 4: Budget vs Actual Cost ---
+fig4 = px.scatter(
     filtered_df,
     x="Total Budget / Contract Value in N$",
     y="Actual Cost to Date (Mil)",
-    title="Budget vs Actual Cost",
-    labels={"Total Budget / Contract Value in N$": "Total Budget (N$)", "Actual Cost to Date (Mil)": "Actual Cost (Mil)"}
+    title="💰 Budget vs Actual Cost",
+    labels={
+        "Total Budget / Contract Value in N$": "Budget (N$)",
+        "Actual Cost to Date (Mil)": "Actual Cost (Mil)",
+    },
 )
-st.plotly_chart(fig3)
+st.plotly_chart(fig4, use_container_width=True)
 
-# --- Duration Overview ---
-fig4 = px.histogram(
+# --- Chart 5: Project Duration Distribution ---
+fig5 = px.histogram(
     filtered_df,
     x="Duration in days",
-    title="Project Duration Distribution",
-    nbins=20
+    nbins=20,
+    title="⏱️ Project Duration Distribution",
 )
-st.plotly_chart(fig4)
+st.plotly_chart(fig5, use_container_width=True)
 
-# --- Date Range: Projects Started in a Specific Year ---
-year_filter = st.sidebar.slider(
-    "Select Year for Projects Commenced",
-    min_value=int(df["Commencement (Contract Signing Date/site handover)"].dt.year.min()),
-    max_value=int(df["Commencement (Contract Signing Date/site handover)"].dt.year.max()),
-    value=(int(df["Commencement (Contract Signing Date/site handover)"].dt.year.min()), int(df["Commencement (Contract Signing Date/site handover)"].dt.year.max()))
+# --- View Data Table ---
+with st.expander("🧮 View Filtered Data Table"):
+    st.dataframe(filtered_df)
+
+# --- Download Button ---
+st.download_button(
+    label="📥 Download Filtered Data",
+    data=filtered_df.to_csv(index=False),
+    file_name="filtered_projects.csv",
+    mime="text/csv",
 )
-
-filtered_year_df = filtered_df[
-    (filtered_df["Commencement (Contract Signing Date/site handover)"].dt.year >= year_filter[0]) &
-    (filtered_df["Commencement (Contract Signing Date/site handover)"].dt.year <= year_filter[1])
-]
-
-# Show filtered projects based on year selection
-st.subheader(f"Projects Commenced Between {year_filter[0]} and {year_filter[1]}")
-st.write(filtered_year_df)
-
