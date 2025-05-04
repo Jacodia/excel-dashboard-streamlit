@@ -12,6 +12,18 @@ def load_data():
 
 df = load_data()
 
+# --- Clean column names to remove any extra spaces or hidden characters ---
+df.columns = df.columns.str.strip()  # Removes leading/trailing spaces
+
+# --- Generate "Projects in Execution" column if it doesn't exist ---
+if "Projects in Execution" not in df.columns:
+    # Example: Generate a new column based on "Project Status" or other columns
+    df['Projects in Execution'] = df['Project Status'].apply(lambda x: 'In Execution' if x == 'In Progress' else 'Not in Execution')
+
+# --- Display column names to help with debugging ---
+st.subheader("🧾 Column Names in Excel")
+st.write(df.columns.tolist())
+
 # --- Sidebar filters ---
 st.sidebar.header("🔍 Filter")
 projects = st.sidebar.multiselect("Select Projects", options=df["Projects in Execution"].dropna().unique())
