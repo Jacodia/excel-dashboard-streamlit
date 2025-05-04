@@ -94,8 +94,8 @@ fig5 = px.histogram(
 )
 st.plotly_chart(fig5, use_container_width=True)
 
-# --- Chart 6: Total Projects by Contractor as Pie Chart ---
-st.markdown("### 🥧 Total Projects by Contractor/Service Provider (Pie Chart)")
+# --- Chart 6: Total Projects by Contractor as Pie Chart with Counts ---
+st.markdown("### 🥧 Total Projects by Contractor/Service Provider (Pie Chart - Counts)")
 
 # Unique contractor list for filter
 contractor_options = filtered_df["Contractor/ Service Provider"].dropna().unique()
@@ -118,13 +118,18 @@ contractor_counts = (
 )
 contractor_counts.columns = ["Contractor/Service Provider", "Total Projects"]
 
-# Create pie chart
+# Create pie chart with counts (no percentages)
 fig6 = px.pie(
     contractor_counts,
     values="Total Projects",
     names="Contractor/Service Provider",
-    title="🥧 Total Projects by Contractor/Service Provider"
+    title="🥧 Total Projects by Contractor/Service Provider",
 )
+
+# Show count only, no percentages
+fig6.update_traces(textinfo="label+value")
+
+# Display the chart
 st.plotly_chart(fig6, use_container_width=True)
 
 # --- View Data Table ---
