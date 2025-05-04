@@ -4,10 +4,13 @@ import streamlit as st
 
 # --- Load CSV ---
 st.set_page_config(page_title="📊 Project Dashboard", layout="wide")
-st.title("🚀 Project Execution Dashboard")
+st.title("🚀 Central Procurment Board of Namibia: Monitoring and Evaluation Projects Dashboard")
 
 # Replace 'your_file.csv' with your actual filename
 df = pd.read_excel('Excel_Dashboard_Data_Prepared.xlsx')
+
+# Replace with your actual filename
+df = pd.read_csv("your_file.csv")
 
 # --- Clean Columns and Convert Data Types ---
 df.columns = df.columns.str.strip()
@@ -93,6 +96,19 @@ fig5 = px.histogram(
     title="⏱️ Project Duration Distribution",
 )
 st.plotly_chart(fig5, use_container_width=True)
+
+# --- Chart 6: Total Projects by Contractor ---
+contractor_counts = filtered_df["Contractor/ Service Provider"].value_counts().reset_index()
+contractor_counts.columns = ["Contractor/Service Provider", "Total Projects"]
+fig6 = px.bar(
+    contractor_counts,
+    x="Contractor/Service Provider",
+    y="Total Projects",
+    title="🔧 Total Projects by Contractor/Service Provider",
+    labels={"Contractor/Service Provider": "Contractor"},
+)
+fig6.update_layout(xaxis_tickangle=-45)
+st.plotly_chart(fig6, use_container_width=True)
 
 # --- View Data Table ---
 with st.expander("🧮 View Filtered Data Table"):
