@@ -51,15 +51,7 @@ fig1 = px.bar(
 )
 st.plotly_chart(fig1, use_container_width=True)
 
-# --- Chart 2: Time Lapse vs. Expected Completion ---
-fig2 = px.scatter(
-    filtered_df,
-    x="Time Lapse in days",
-    y="Expected completion Percentage",
-    title="📈 Time Lapse vs Expected Completion",
-    labels={"Time Lapse in days": "Days", "Expected completion Percentage": "% Complete"},
-)
-st.plotly_chart(fig2, use_container_width=True)
+
 
 # --- Chart 3: Project Count by Entity ---
 project_count = filtered_df["Public Entity's Name"].value_counts().reset_index()
@@ -72,30 +64,10 @@ fig3 = px.pie(
 )
 st.plotly_chart(fig3, use_container_width=True)
 
-# --- Chart 4: Budget vs Actual Cost ---
-fig4 = px.scatter(
-    filtered_df,
-    x="Total Budget / Contract Value in N$",
-    y="Actual Cost to Date (Mil)",
-    title="💰 Budget vs Actual Cost",
-    labels={
-        "Total Budget / Contract Value in N$": "Budget (N$)",
-        "Actual Cost to Date (Mil)": "Actual Cost (Mil)",
-    },
-)
-st.plotly_chart(fig4, use_container_width=True)
 
-# --- Chart 5: Project Duration Distribution ---
-fig5 = px.histogram(
-    filtered_df,
-    x="Duration in days",
-    nbins=20,
-    title="⏱️ Project Duration Distribution",
-)
-st.plotly_chart(fig5, use_container_width=True)
 
 # --- Chart 6: Total Projects by Contractor as Pie Chart with Counts ---
-st.markdown("### 🥧 Total Projects by Contractor/Service Provider (Pie Chart - Counts)")
+st.markdown("### 🥧 Total Projects by Contractor/Service Provider ")
 
 # Unique contractor list for filter
 contractor_options = filtered_df["Contractor/ Service Provider"].dropna().unique()
@@ -144,7 +116,7 @@ st.download_button(
     mime="text/csv",
 )
 
-# --- Chart 7: Budget vs Actual Cost by Project (Stacked & Horizontal) ---
+# --- Chart 7: Budget vs Actual Cost by Project  ---
 st.markdown("### 💰 Budget vs Actual Cost by Project")
 
 # Filter out rows with missing or zero budget or cost
