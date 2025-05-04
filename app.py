@@ -2,77 +2,96 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Title
+# --- Page setup ---
 st.set_page_config(page_title="📊 Project Dashboard", layout="wide")
-st.title("📊 Project Dashboard - Streamlit Web App")
 
-# Load data
+# --- Load data ---
 @st.cache_data
 def load_data():
-    df = pd.read_excel("Excel_Dashboard_Data_Prepared.xlsx")
-    df.columns = df.columns.str.strip()  # remove any extra spaces
-    return df
+    return pd.read_excel("Excel_Dashboard_Data_Prepared.xlsx")
 
 df = load_data()
 
-# Show preview
-st.subheader("🗂️ Data Preview")
-st.dataframe(df.head(10), use_container_width=True)
+# --- Sidebar filters ---
+st.sidebar.header("🔍 Filter")
+projects = st.sidebar.multiselect("Select Projects", options=df["Projects in Execution"].dropna().unique())
+status = st.sidebar.multiselect("Select Status", options=df["Project Status"].dropna().unique())
 
-# Sidebar filters
-st.sidebar.header("🔍 Filters")
-entities = df["Public Entity's Name"].dropna().unique()
-categories = df["Procurement Category"].dropna().unique()
+# --- Filter logic ---
+filtered_df = df.copy()
+if projects:
+    filtered_df = filtered_df[filtered_df["Projects in Execution"].isin(projects)]
+if status:
+    filtered_df = filtered_df[filtered_df["Project Status"].isin(status)]
 
-selected_entities = st.sidebar.multiselect("Select Public Entities", options=entities, default=entities)
-selected_categories = st.sidebar.multiselect("Select Procurement Categories", options=categories, default=categories)
+# --- Title ---
+st.title("🚀 Project Dashboard")
+st.markdown("Visualizing execution, status, and timeline metrics from the uploaded Excel data.")
 
-# Apply filters
-filtered_df = df[
-    (df["Public Entity's Name"].isin(selected_entities)) &
-    (df["Procurement Category"].isin(selected_categories))
-]
+# --- Show DataFrame preview ---
+with st.expander("🔍 View Data"):
+    st.dataframe(filtered_df, use_container_width=True)
 
-# Check if filtered data is empty
-if filtered_df.empty:
-    st.warning("⚠️ No data found for the selected filters.")
-    st.stop()
+# --- KPI Summary ---
+col1, col2, col3 = st.columns(3)
+col1.metric("📁 Total Projects", len(filtered_df))
+col2.metric("✅ Completed", int((filtered_df["Project Status"] == "Completed").sum()))
+col3.metric("🚧 In Progress", int((filtered_df["Project Status"] == "In Progress").sum()))
 
-# Charts Section
-st.subheader("📈 Visual Insights")
-
-# Chart 1: Avg Completion % by Category
-if "Average completion Percentage" in filtered_df.columns:
-    avg_completion = filtered_df.groupby("Procurement Category")["Average completion Percentage"].mean().reset_index()
-    fig1 = px.bar(avg_completion, x="Procurement Category", y="Average completion Percentage",
-                  title="🔧 Avg Completion % by Procurement Category", color="Procurement Category")
+# --- Chart 1: Project Count by Status ---
+if "Project Status" in filtered_df.columns:
+    fig1 = px.bar(
+        filtered_df["Project Status"].value_counts().reset_index(),
+        x="index", y="Project Status",
+        labels={"index": "Status", "Project Status": "Count"},
+        title="📌 Project Count by Status"
+    )
     st.plotly_chart(fig1, use_container_width=True)
-else:
-    st.info("ℹ️ Column 'Average completion Percentage' not found.")
 
-# Chart 2: Actual Cost Over Time
-if "Commencement (Contract Signing Date/site handover)" in filtered_df.columns:
-    filtered_df["Commencement Date"] = pd.to_datetime(filtered_df["Commencement (Contract Signing Date/site handover)"], errors='coerce')
-    cost_data = filtered_df.dropna(subset=["Commencement Date", "Actual Cost to Date (Mil)"])
-    if not cost_data.empty:
-        fig2 = px.line(cost_data, x="Commencement Date", y="Actual Cost to Date (Mil)",
-                       color="Projects in Execution", title="💰 Cost to Date Over Time")
-        st.plotly_chart(fig2, use_container_width=True)
+# --- Chart 2: Projects by Department (if available) ---
+if "Department" in filtered_df.columns:
+    fig2 = px.pie(
+        filtered_df,
+        names="Department",
+        title="🏢 Projects by Department"
+    )
+    st.plotly_chart(fig2, use_container_width=True)
+
+# --- Chart 3: Duration Histogram (if available) ---
+if "Duration in Days" in filtered_df.columns:
+    fig3 = px.histogram(
+        filtered_df,
+        x="Duration in Days",
+        nbins=20,
+        title="⏳ Distribution of Project Durations"
+    )
+    st.plotly_chart(fig3, use_container_width=True)
+
+# --- Chart 4: Duration vs Time Lapse per Project ---
+if "Duration in Days" in filtered_df.columns and "Time lapse in Days" in filtered_df.columns:
+    comparison_df = filtered_df[["Projects in Execution", "Duration in Days", "Time lapse in Days"]].dropna()
+
+    if not comparison_df.empty:
+        fig4 = px.bar(
+            comparison_df.melt(id_vars="Projects in Execution", value_vars=["Duration in Days", "Time lapse in Days"]),
+            x="Projects in Execution",
+            y="value",
+            color="variable",
+            barmode="group",
+            title="📊 Duration vs Time Lapse per Project",
+            labels={"value": "Days", "variable": "Metric"},
+        )
+        st.plotly_chart(fig4, use_container_width=True)
     else:
-        st.info("ℹ️ Not enough data for Cost to Date Over Time chart.")
+        st.info("ℹ️ Not enough data to compare Duration and Time Lapse.")
 else:
-    st.info("ℹ️ 'Commencement Date' column missing.")
+    st.info("ℹ️ Columns for Duration or Time Lapse are missing.")
 
-# Chart 3: Project Count by Entity
-project_count = filtered_df["Public Entity's Name"].value_counts().reset_index()
-project_count.columns = ["Public Entity", "Count"]
-fig3 = px.pie(project_count, values="Count", names="Public Entity", title="🏛️ Projects by Public Entity")
-st.plotly_chart(fig3, use_container_width=True)
-
-# Download button
-st.download_button(
-    label="📥 Download Filtered Data",
-    data=filtered_df.to_csv(index=False),
-    file_name="filtered_projects.csv",
-    mime="text/csv"
-)
+# --- Download Option ---
+with st.expander("⬇️ Download Filtered Data"):
+    st.download_button(
+        label="Download as Excel",
+        data=filtered_df.to_excel(index=False),
+        file_name="filtered_projects.xlsx",
+        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
