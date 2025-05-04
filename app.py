@@ -99,24 +99,11 @@ st.plotly_chart(fig8, use_container_width=True)
 
 
 # --- Chart 6: Total Projects by Contractor as Pie Chart with Counts ---
-st.markdown("### 🥧 Total Projects by Contractor/Service Provider ")
+st.markdown("### 🥧 Total Projects by Contractor/Service Provider")
 
-# Unique contractor list for filter
-contractor_options = filtered_df["Contractor/ Service Provider"].dropna().unique()
-
-# Multiselect dropdown to filter contractors
-selected_contractors = st.multiselect(
-    "Select Contractor(s) to View", options=contractor_options, default=contractor_options
-)
-
-# Filter the DataFrame based on selected contractors
-contractor_filtered_df = filtered_df[
-    filtered_df["Contractor/ Service Provider"].isin(selected_contractors)
-]
-
-# Count total projects per selected contractor
+# Count total projects per contractor
 contractor_counts = (
-    contractor_filtered_df["Contractor/ Service Provider"]
+    filtered_df["Contractor/ Service Provider"]
     .value_counts()
     .reset_index()
 )
@@ -127,10 +114,10 @@ fig6 = px.pie(
     contractor_counts,
     values="Total Projects",
     names="Contractor/Service Provider",
-    title="🥧 Total Projects by Contractor/Service Provider",
+    title="🥧 Total Projects by Contractor/Service Provider"
 )
 
-# Show count only, no percentages
+# Show counts only (no percentages)
 fig6.update_traces(textinfo="value")
 
 # Display the chart
