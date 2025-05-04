@@ -127,7 +127,7 @@ fig6 = px.pie(
 )
 
 # Show count only, no percentages
-fig6.update_traces(textinfo="label+value")
+fig6.update_traces(textinfo="value")
 
 # Display the chart
 st.plotly_chart(fig6, use_container_width=True)
