@@ -15,36 +15,27 @@ df["Expected completion Percentage"] = pd.to_numeric(df["Expected completion Per
 df["Commencement (Contract Signing Date/site handover)"] = pd.to_datetime(df["Commencement (Contract Signing Date/site handover)"], errors="coerce")
 df["Revised Completion"] = pd.to_datetime(df["Revised Completion"], errors="coerce")
 
-# --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Options")
 
+status_options = df["Project Status"].dropna().unique()
+
+# Automatically select all options by default
 status = st.sidebar.multiselect(
-    "Select Project Status", options=df["Project Status"].dropna().unique()
+    "Select Project Status",
+    options=status_options,
+    default=status_options  # Default to all statuses selected
 )    
+
 entities = st.sidebar.multiselect(
     "Select Public Entity",
     options=df["Public Entity's Name"].dropna().unique(),
     default=df["Public Entity's Name"].dropna().unique()
 )
 
-#--categories = st.sidebar.multiselect(
-#--    "Select Procurement Category",
-#--    options=df["Procurement Category"].dropna().unique(),
-#--    default=df["Procurement Category"].dropna().unique()
-#--)
-
-#--nationalities = st.sidebar.multiselect(
- #--   "Select Contractor Nationality",
- #--   options=df["Contractor/ Service Provider Nationality"].dropna().unique(),
-#--    default=df["Contractor/ Service Provider Nationality"].dropna().unique()
-#--)--
-
 # --- Apply Filters ---
 filtered_df = df[
     (df["Project Status"].isin(status)) &
     (df["Public Entity's Name"].isin(entities))
-   #-- (df["Procurement Category"].isin(categories)) &--
-   #-- (df["Contractor/ Service Provider Nationality"].isin(nationalities))--
 ]
 
 # --- Project Summary ---
