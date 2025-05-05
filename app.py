@@ -30,24 +30,24 @@ entities = st.sidebar.multiselect(
     default=df["Public Entity's Name"].dropna().unique()
 )
 
-categories = st.sidebar.multiselect(
-    "Select Procurement Category",
-    options=df["Procurement Category"].dropna().unique(),
-    default=df["Procurement Category"].dropna().unique()
-)
+#--categories = st.sidebar.multiselect(
+#--    "Select Procurement Category",
+#--    options=df["Procurement Category"].dropna().unique(),
+#--    default=df["Procurement Category"].dropna().unique()
+#--)
 
-nationalities = st.sidebar.multiselect(
-    "Select Contractor Nationality",
-    options=df["Contractor/ Service Provider Nationality"].dropna().unique(),
-    default=df["Contractor/ Service Provider Nationality"].dropna().unique()
-)
+#--nationalities = st.sidebar.multiselect(
+ #--   "Select Contractor Nationality",
+ #--   options=df["Contractor/ Service Provider Nationality"].dropna().unique(),
+#--    default=df["Contractor/ Service Provider Nationality"].dropna().unique()
+#--)--
 
 # --- Apply Filters ---
 filtered_df = df[
     (df["Project Status"].isin(status)) &
     (df["Public Entity's Name"].isin(entities)) &
-    (df["Procurement Category"].isin(categories)) &
-    (df["Contractor/ Service Provider Nationality"].isin(nationalities))
+   #-- (df["Procurement Category"].isin(categories)) &--
+   #-- (df["Contractor/ Service Provider Nationality"].isin(nationalities))--
 ]
 
 # --- Project Summary ---
