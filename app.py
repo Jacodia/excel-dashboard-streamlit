@@ -4,7 +4,7 @@ import streamlit as st
 
 # --- Load CSV ---
 st.set_page_config(page_title="📊 Project Dashboard", layout="wide")
-st.title("🚀 Central Procurment Board of Namibia: Monitoring and Evaluation Projects Dashboard")
+st.title("Central Procurment Board of Namibia: Monitoring and Evaluation Projects Dashboard")
 
 # Replace 'your_file.csv' with your actual filename
 df = pd.read_excel('Excel_Dashboard_Data_Prepared.xlsx')
