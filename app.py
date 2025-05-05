@@ -51,19 +51,42 @@ fig1 = px.bar(
 )
 st.plotly_chart(fig1, use_container_width=True)
 
-# --- Horizontal Cards: Procurement Category Counts ---
+# --- Horizontal Cards: Procurement Category Overview with Contract Value ---
 st.markdown("### 📦 Procurement Categories Overview")
 
-# Count procurement categories
-procurement_counts = filtered_df["Procurement Category"].value_counts().reset_index()
-procurement_counts.columns = ["Category", "Total"]
+# Clean and convert contract value
+filtered_df["Total Budget / Contract Value in N$"] = pd.to_numeric(
+    filtered_df["Total Budget / Contract Value in N$"], errors="coerce"
+)
 
-# Display counts as horizontal metrics
-cols = st.columns(len(procurement_counts))
+# Group by Procurement Category
+category_summary = filtered_df.groupby("Procurement Category").agg(
+    Total_Projects=("Procurement Category", "count"),
+    Total_Value=("Total Budget / Contract Value in N$", "sum")
+).reset_index()
 
-for idx, row in procurement_counts.iterrows():
+# Format total value as currency in millions
+category_summary["Total_Value_Mil"] = category_summary["Total_Value"] / 1_000_000
+category_summary["Total_Value_Mil"] = category_summary["Total_Value_Mil"].apply(lambda x: f"N$ {x:,.2f}M")
+
+# Display as horizontal cards with color accents
+cols = st.columns(len(category_summary))
+
+colors = ["#FFB6C1", "#ADD8E6", "#90EE90", "#FFD700", "#DDA0DD", "#FFA07A", "#87CEFA", "#F08080"]  # extend as needed
+
+for idx, row in category_summary.iterrows():
     with cols[idx]:
-        st.metric(label=row["Category"], value=row["Total"])
+        st.markdown(
+            f"""
+            <div style='background-color:{colors[idx % len(colors)]}; padding: 1em; border-radius: 10px; text-align: center'>
+                <h4 style='margin-bottom: 0.5em'>{row["Procurement Category"]}</h4>
+                <p><strong>{row["Total_Projects"]} Projects</strong></p>
+                <p><strong>{row["Total_Value_Mil"]}</strong></p>
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+        
 
 
 # --- Chart 3: Project Count by Entity ---
