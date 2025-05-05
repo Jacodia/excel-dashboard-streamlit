@@ -42,7 +42,7 @@ col3.metric("🚧 In Progress", len(filtered_df[filtered_df["Project Status"] ==
 fig1 = px.bar(
     filtered_df,
     x="Project Status",
-    title="📌 Project Status Distribution",
+    title="Project Status Distribution",
     color="Project Status",
     labels={"count": "Number of Projects"},
     color_discrete_sequence=["#F79646", "#C0C0C0", "#000000", "#FFFFFF"]
@@ -50,7 +50,7 @@ fig1 = px.bar(
 st.plotly_chart(fig1, use_container_width=True)
 
 # --- Procurement Categories Overview ---
-st.markdown("### 📦 Procurement Categories Overview")
+st.markdown("Procurement Categories Overview")
 
 filtered_df["Total Budget / Contract Value in N$"] = pd.to_numeric(
     filtered_df["Total Budget / Contract Value in N$"], errors="coerce"
@@ -65,7 +65,7 @@ category_summary["Total_Value_Mil"] = category_summary["Total_Value"] / 1_000_00
 category_summary["Total_Value_Mil"] = category_summary["Total_Value_Mil"].apply(lambda x: f"N$ {x:,.2f}M")
 
 cols = st.columns(len(category_summary))
-colors = ["#F79646", "#C0C0C0", "#FFFFFF", "#000000"]
+colors = ["#F79646"]
 
 for idx, row in category_summary.iterrows():
     with cols[idx]:
@@ -94,7 +94,7 @@ fig3 = px.pie(
 st.plotly_chart(fig3, use_container_width=True)
 
 # --- Chart 8: Completion Percentage per Project ---
-st.markdown("### 📊 Completion Percentage per Project")
+st.markdown("Completion Percentage per Project")
 completion_df = filtered_df[
     (filtered_df["Projects in Execution"].notna()) &
     (filtered_df["Average completion Percentage"].notna())
@@ -108,7 +108,7 @@ fig8 = px.bar(
     x="Average completion Percentage",
     y="Projects in Execution",
     orientation="h",
-    title="📈 Completion Percentage per Project",
+    title="Completion Percentage per Project",
     labels={
         "Average completion Percentage": "Completion (%)",
         "Projects in Execution": "Project"
@@ -121,7 +121,7 @@ fig8.update_layout(height=800)
 st.plotly_chart(fig8, use_container_width=True)
 
 # --- Chart 6: Projects by Contractor ---
-st.markdown("### 📊 Total Projects by Contractor/Service Provider")
+st.markdown("Total Projects by Contractor/Service Provider")
 contractor_counts = filtered_df["Contractor/ Service Provider"].value_counts().reset_index()
 contractor_counts.columns = ["Contractor/Service Provider", "Total Projects"]
 
@@ -129,7 +129,7 @@ fig6 = px.bar(
     contractor_counts,
     x="Contractor/Service Provider",
     y="Total Projects",
-    title="📊 Total Projects by Contractor/Service Provider",
+    title="Total Projects by Contractor/Service Provider",
     text="Total Projects",
     color="Contractor/Service Provider",
     color_discrete_sequence=["#F79646", "#C0C0C0", "#000000", "#FFFFFF"]
@@ -139,7 +139,7 @@ fig6.update_layout(xaxis_tickangle=-45, showlegend=False, height=600)
 st.plotly_chart(fig6, use_container_width=True)
 
 # --- Chart: Project Duration ---
-st.markdown("### 📅 Project Duration: Planned vs Actual (Days)")
+st.markdown("Project Duration: Planned vs Actual (Days)")
 duration_df = filtered_df[
     (filtered_df["Projects in Execution"].notna()) &
     (filtered_df["Duration in days"].notna()) &
@@ -166,7 +166,7 @@ fig_duration = px.bar(
     color="Type",
     barmode="group",
     orientation="h",
-    title="📅 Project Duration: Planned vs Actual",
+    title="Project Duration: Planned vs Actual",
     labels={"Days": "Duration (days)", "Projects in Execution": "Project"},
     color_discrete_map={
         "Planned Duration": "#F79646",
@@ -177,7 +177,7 @@ fig_duration.update_layout(height=800)
 st.plotly_chart(fig_duration, use_container_width=True)
 
 # --- Chart: Contractor Nationality ---
-st.markdown("### 🌍 Count of Service Provider Nationalities")
+st.markdown("Count of Service Provider Nationalities")
 nationality_counts = filtered_df["Contractor/ Service Provider Nationality"].value_counts().reset_index()
 nationality_counts.columns = ["Nationality", "Project Count"]
 
@@ -185,7 +185,7 @@ fig_nat = px.bar(
     nationality_counts,
     x="Nationality",
     y="Project Count",
-    title="🌍 Projects by Contractor Nationality",
+    title="Projects by Contractor Nationality",
     text="Project Count",
     color_discrete_sequence=["#F79646", "#C0C0C0", "#FFFFFF", "#000000"]
 )
@@ -194,7 +194,7 @@ fig_nat.update_layout(xaxis_tickangle=-45)
 st.plotly_chart(fig_nat, use_container_width=True)
 
 # --- Chart 7: Budget vs Actual ---
-st.markdown("### 💰 Budget vs Actual Cost by Project")
+st.markdown("Budget vs Actual Cost by Project")
 budget_vs_actual_df = filtered_df[
     (filtered_df["Projects in Execution"].notna()) &
     (filtered_df["Total Budget / Contract Value in N$"].notna()) &
@@ -214,7 +214,7 @@ fig7 = px.bar(
     x="Amount",
     color="Metric",
     orientation="h",
-    title="💰 Budget vs Actual Cost by Project (Stacked)",
+    title="Budget vs Actual Cost by Project (Stacked)",
     labels={"Amount": "Amount (N$ Mil)", "Projects in Execution": "Project"},
     color_discrete_map={
         "Total Budget / Contract Value in N$": "#F79646",
