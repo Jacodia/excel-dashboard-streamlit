@@ -2,35 +2,53 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-# --- Load CSV ---
+# --- Page Configuration ---
 st.set_page_config(page_title="📊 Project Dashboard", layout="wide")
-st.title("Central Procurment Board of Namibia: Monitoring and Evaluation Projects Dashboard")
+st.title("Central Procurement Board of Namibia: Monitoring and Evaluation Projects Dashboard")
 
+# --- Load Data ---
 df = pd.read_excel('Excel_Dashboard_Data_Prepared.xlsx')
 
 # --- Clean Columns and Convert Data Types ---
 df.columns = df.columns.str.strip()
-
-
-df["Expected completion Percentage"] = pd.to_numeric(
-    df["Expected completion Percentage"], errors="coerce"
-)
-df["Commencement (Contract Signing Date/site handover)"] = pd.to_datetime(
-    df["Commencement (Contract Signing Date/site handover)"], errors="coerce"
-)
-df["Revised Completion"] = pd.to_datetime(
-    df["Revised Completion"], errors="coerce"
-)
+df["Expected completion Percentage"] = pd.to_numeric(df["Expected completion Percentage"], errors="coerce")
+df["Commencement (Contract Signing Date/site handover)"] = pd.to_datetime(df["Commencement (Contract Signing Date/site handover)"], errors="coerce")
+df["Revised Completion"] = pd.to_datetime(df["Revised Completion"], errors="coerce")
 
 # --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Options")
+
 status = st.sidebar.multiselect(
-    "Select Project Status", options=df["Project Status"].dropna().unique()
+    "Select Project Status",
+    options=df["Project Status"].dropna().unique(),
+    default=df["Project Status"].dropna().unique()
 )
 
-filtered_df = df.copy()
-if status:
-    filtered_df = filtered_df[filtered_df["Project Status"].isin(status)]
+entities = st.sidebar.multiselect(
+    "Select Public Entity",
+    options=df["Public Entity's Name"].dropna().unique(),
+    default=df["Public Entity's Name"].dropna().unique()
+)
+
+categories = st.sidebar.multiselect(
+    "Select Procurement Category",
+    options=df["Procurement Category"].dropna().unique(),
+    default=df["Procurement Category"].dropna().unique()
+)
+
+nationalities = st.sidebar.multiselect(
+    "Select Contractor Nationality",
+    options=df["Contractor/ Service Provider Nationality"].dropna().unique(),
+    default=df["Contractor/ Service Provider Nationality"].dropna().unique()
+)
+
+# --- Apply Filters ---
+filtered_df = df[
+    (df["Project Status"].isin(status)) &
+    (df["Public Entity's Name"].isin(entities)) &
+    (df["Procurement Category"].isin(categories)) &
+    (df["Contractor/ Service Provider Nationality"].isin(nationalities))
+]
 
 # --- Project Summary ---
 st.markdown("### 🧾 Project Summary")
@@ -92,13 +110,7 @@ fig3 = px.pie(
     title="Projects by Public Entity",
     color_discrete_sequence=["#F79646", "#C0C0C0", "#FFFFFF", "#000000"]
 )
-
-# Update trace to show count only, not percentage
-fig3.update_traces(
-    textinfo="label+value",  # Show label and count
-    textposition="inside"    # Position text inside the slices
-)
-
+fig3.update_traces(textinfo="label+value", textposition="inside")
 st.plotly_chart(fig3, use_container_width=True)
 
 # --- Chart 8: Completion Percentage per Project ---
@@ -117,14 +129,10 @@ fig8 = px.bar(
     y="Projects in Execution",
     orientation="h",
     title="Completion Percentage per Project",
-    labels={
-        "Average completion Percentage": "Completion (%)",
-        "Projects in Execution": "Project"
-    },
+    labels={"Average completion Percentage": "Completion (%)", "Projects in Execution": "Project"},
     color="Average completion Percentage",
     color_continuous_scale=["#FFFFFF", "#C0C0C0", "#F79646", "#000000"]
 )
-
 fig8.update_layout(height=800)
 st.plotly_chart(fig8, use_container_width=True)
 
