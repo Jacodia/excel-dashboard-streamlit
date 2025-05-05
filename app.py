@@ -11,6 +11,7 @@ df = pd.read_excel('Excel_Dashboard_Data_Prepared.xlsx')
 # --- Clean Columns and Convert Data Types ---
 df.columns = df.columns.str.strip()
 
+
 df["Expected completion Percentage"] = pd.to_numeric(
     df["Expected completion Percentage"], errors="coerce"
 )
