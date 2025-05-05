@@ -20,12 +20,7 @@ st.sidebar.header("🔍 Filter Options")
 
 status = st.sidebar.multiselect(
     "Select Project Status", options=df["Project Status"].dropna().unique()
-)
-
-filtered_df = df.copy()
-if status:
-    filtered_df = filtered_df[filtered_df["Project Status"].isin(status)]
-    
+)    
 entities = st.sidebar.multiselect(
     "Select Public Entity",
     options=df["Public Entity's Name"].dropna().unique(),
