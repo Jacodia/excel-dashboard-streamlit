@@ -45,7 +45,7 @@ entities = st.sidebar.multiselect(
 # --- Apply Filters ---
 filtered_df = df[
     (df["Project Status"].isin(status)) &
-    (df["Public Entity's Name"].isin(entities)) &
+    (df["Public Entity's Name"].isin(entities))
    #-- (df["Procurement Category"].isin(categories)) &--
    #-- (df["Contractor/ Service Provider Nationality"].isin(nationalities))--
 ]
