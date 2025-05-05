@@ -51,6 +51,19 @@ fig1 = px.bar(
 )
 st.plotly_chart(fig1, use_container_width=True)
 
+# --- Horizontal Cards: Procurement Category Counts ---
+st.markdown("### 📦 Procurement Categories Overview")
+
+# Count procurement categories
+procurement_counts = filtered_df["Procurement Category"].value_counts().reset_index()
+procurement_counts.columns = ["Category", "Total"]
+
+# Display counts as horizontal metrics
+cols = st.columns(len(procurement_counts))
+
+for idx, row in procurement_counts.iterrows():
+    with cols[idx]:
+        st.metric(label=row["Category"], value=row["Total"])
 
 
 # --- Chart 3: Project Count by Entity ---
@@ -134,6 +147,23 @@ st.download_button(
     file_name="filtered_projects.csv",
     mime="text/csv",
 )
+# --- Chart: Count of Service Provider Nationality ---
+st.markdown("### 🌍 Count of Service Provider Nationalities")
+
+# Count occurrences
+nationality_counts = filtered_df["Contractor/ Service Provider Nationality"].value_counts().reset_index()
+nationality_counts.columns = ["Nationality", "Project Count"]
+
+# Bar chart
+fig_nationality = px.bar(
+    nationality_counts,
+    x="Nationality",
+    y="Project Count",
+    title="🌍 Number of Projects by Contractor Nationality",
+    labels={"Project Count": "Projects"},
+)
+fig_nationality.update_layout(xaxis_tickangle=-45)
+st.plotly_chart(fig_nationality, use_container_width=True)
 
 # --- Chart 7: Budget vs Actual Cost by Project  ---
 st.markdown("### 💰 Budget vs Actual Cost by Project")
