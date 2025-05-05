@@ -76,6 +76,7 @@ fig3 = px.pie(
     title="🏛️ Projects by Public Entity",
 )
 st.plotly_chart(fig3, use_container_width=True)
+
 # --- Chart 8: Average Project Completion % per Project ---
 st.markdown("### 📊 Average Completion Percentage per Project")
 
@@ -111,8 +112,8 @@ fig8.update_layout(
 st.plotly_chart(fig8, use_container_width=True)
 
 
-# --- Chart 6: Total Projects by Contractor as Pie Chart with Counts ---
-st.markdown("### 🥧 Total Projects by Contractor/Service Provider")
+# --- Chart 6: Total Projects by Contractor as Bar Chart with Count Labels ---
+st.markdown("### 📊 Total Projects by Contractor/Service Provider")
 
 # Count total projects per contractor
 contractor_counts = (
@@ -122,16 +123,24 @@ contractor_counts = (
 )
 contractor_counts.columns = ["Contractor/Service Provider", "Total Projects"]
 
-# Create pie chart with counts (no percentages)
-fig6 = px.pie(
+# Create bar chart with count labels inside the bars
+fig6 = px.bar(
     contractor_counts,
-    values="Total Projects",
-    names="Contractor/Service Provider",
-    title="🥧 Total Projects by Contractor/Service Provider"
+    x="Contractor/Service Provider",
+    y="Total Projects",
+    title="📊 Total Projects by Contractor/Service Provider",
+    text="Total Projects",  # Label with count
+    color="Contractor/Service Provider",  # Different color per contractor
+    labels={"Total Projects": "Number of Projects"},
 )
 
-# Show counts only (no percentages)
-fig6.update_traces(textinfo="value")
+# Customize the text to be inside the bars
+fig6.update_traces(textposition="inside")
+fig6.update_layout(
+    xaxis_tickangle=-45,
+    showlegend=False,
+    height=600
+)
 
 # Display the chart
 st.plotly_chart(fig6, use_container_width=True)
@@ -140,13 +149,7 @@ st.plotly_chart(fig6, use_container_width=True)
 with st.expander("🧮 View Filtered Data Table"):
     st.dataframe(filtered_df)
 
-# --- Download Button ---
-st.download_button(
-    label="📥 Download Filtered Data",
-    data=filtered_df.to_csv(index=False),
-    file_name="filtered_projects.csv",
-    mime="text/csv",
-)
+
 # --- Chart: Count of Service Provider Nationality ---
 st.markdown("### 🌍 Count of Service Provider Nationalities")
 
@@ -165,21 +168,12 @@ fig_nat = px.bar(
 )
 
 # Update layout for better readability
-fig_nat.update_traces(textposition="outside")
+fig_nat.update_traces(textposition="inside")
 fig_nat.update_layout(xaxis_tickangle=-45)
 
 st.plotly_chart(fig_nat, use_container_width=True)
 
-# Bar chart
-fig_nationality = px.bar(
-    nationality_counts,
-    x="Nationality",
-    y="Project Count",
-    title="🌍 Number of Projects by Contractor Nationality",
-    labels={"Project Count": "Projects"},
-)
-fig_nationality.update_layout(xaxis_tickangle=-45)
-st.plotly_chart(fig_nationality, use_container_width=True)
+
 
 # --- Chart 7: Budget vs Actual Cost by Project  ---
 st.markdown("### 💰 Budget vs Actual Cost by Project")
@@ -219,3 +213,12 @@ fig7.update_layout(
 )
 
 st.plotly_chart(fig7, use_container_width=True)
+
+
+# --- Download Button ---
+st.download_button(
+    label="📥 Download Filtered Data",
+    data=filtered_df.to_csv(index=False),
+    file_name="filtered_projects.csv",
+    mime="text/csv",
+)
