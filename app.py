@@ -147,6 +147,52 @@ fig6.update_layout(
 
 # Display the chart
 st.plotly_chart(fig6, use_container_width=True)
+# --- Chart: 📅 Project Duration (Planned vs Actual) ---
+st.markdown("### 📅 Project Duration: Planned vs Actual (Days)")
+
+# Filter data
+duration_df = filtered_df[
+    (filtered_df["Projects in Execution"].notna()) &
+    (filtered_df["Duration in days"].notna()) &
+    (filtered_df["Time Lapse in days"].notna())
+].copy()
+
+# Convert to numeric
+duration_df["Duration in days"] = pd.to_numeric(duration_df["Duration in days"], errors="coerce")
+duration_df["Time Lapse in days"] = pd.to_numeric(duration_df["Time Lapse in days"], errors="coerce")
+
+# Melt the dataframe for grouped bar chart
+melted_duration = duration_df.melt(
+    id_vars=["Projects in Execution"],
+    value_vars=["Duration in days", "Time Lapse in days"],
+    var_name="Type",
+    value_name="Days"
+)
+
+# Rename for better display
+melted_duration["Type"] = melted_duration["Type"].replace({
+    "Duration in days": "Planned Duration",
+    "Time Lapse in days": "Actual Duration"
+})
+
+# Create bar chart
+fig_duration = px.bar(
+    melted_duration,
+    x="Days",
+    y="Projects in Execution",
+    color="Type",
+    barmode="group",
+    orientation="h",
+    title="📅 Project Duration: Planned vs Actual",
+    labels={"Days": "Duration (days)", "Projects in Execution": "Project"},
+    color_discrete_map={
+        "Planned Duration": "#636EFA",
+        "Actual Duration": "#EF553B"
+    }
+)
+
+fig_duration.update_layout(height=800)
+st.plotly_chart(fig_duration, use_container_width=True)
 
 
 
