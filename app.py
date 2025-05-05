@@ -77,8 +77,8 @@ fig3 = px.pie(
 )
 st.plotly_chart(fig3, use_container_width=True)
 
-# --- Chart 8: Average Project Completion % per Project ---
-st.markdown("### 📊 Average Completion Percentage per Project")
+# --- Chart 8: Completion Percentage per Project ---
+st.markdown("### 📊 Completion Percentage per Project")
 
 # Filter out rows without completion percentage or project names
 completion_df = filtered_df[
@@ -86,25 +86,28 @@ completion_df = filtered_df[
     (filtered_df["Average completion Percentage"].notna())
 ]
 
-# Convert to numeric in case data is read as string
+# Ensure the percentage column is numeric
 completion_df["Average completion Percentage"] = pd.to_numeric(
     completion_df["Average completion Percentage"], errors="coerce"
 )
 
-# Create the bar chart
+# Create the horizontal bar chart
 fig8 = px.bar(
     completion_df,
     x="Average completion Percentage",
     y="Projects in Execution",
     orientation="h",
-    title="📈 Average Completion Percentage per Project",
-    labels={"Average completion Percentage": "Avg Completion %", "Projects in Execution": "Project"},
+    title="📈 Completion Percentage per Project",
+    labels={
+        "Average completion Percentage": "Completion (%)",
+        "Projects in Execution": "Project"
+    },
     color="Average completion Percentage",
     color_continuous_scale="Blues"
 )
 
 fig8.update_layout(
-    xaxis=dict(title="Average Completion (%)"),
+    xaxis=dict(title="Completion (%)"),
     yaxis=dict(title="Project"),
     height=800
 )
@@ -145,9 +148,6 @@ fig6.update_layout(
 # Display the chart
 st.plotly_chart(fig6, use_container_width=True)
 
-# --- View Data Table ---
-with st.expander("🧮 View Filtered Data Table"):
-    st.dataframe(filtered_df)
 
 
 # --- Chart: Count of Service Provider Nationality ---
@@ -214,6 +214,9 @@ fig7.update_layout(
 
 st.plotly_chart(fig7, use_container_width=True)
 
+# --- View Data Table ---
+with st.expander("🧮 View Filtered Data Table"):
+    st.dataframe(filtered_df)
 
 # --- Download Button ---
 st.download_button(
