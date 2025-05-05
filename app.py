@@ -88,9 +88,16 @@ fig3 = px.pie(
     project_count,
     values="Count",
     names="Public Entity",
-    title="🏛️ Projects by Public Entity",
+    title="Projects by Public Entity",
     color_discrete_sequence=["#F79646", "#C0C0C0", "#FFFFFF", "#000000"]
 )
+
+# Update trace to show count only, not percentage
+fig3.update_traces(
+    textinfo="label+value",  # Show label and count
+    textposition="inside"    # Position text inside the slices
+)
+
 st.plotly_chart(fig3, use_container_width=True)
 
 # --- Chart 8: Completion Percentage per Project ---
