@@ -154,6 +154,22 @@ st.markdown("### 🌍 Count of Service Provider Nationalities")
 nationality_counts = filtered_df["Contractor/ Service Provider Nationality"].value_counts().reset_index()
 nationality_counts.columns = ["Nationality", "Project Count"]
 
+# Create bar chart with data labels
+fig_nat = px.bar(
+    nationality_counts,
+    x="Nationality",
+    y="Project Count",
+    title="🌍 Projects by Contractor Nationality",
+    text="Project Count",  # Show total count as data label
+    labels={"Project Count": "Total Projects"},
+)
+
+# Update layout for better readability
+fig_nat.update_traces(textposition="outside")
+fig_nat.update_layout(xaxis_tickangle=-45)
+
+st.plotly_chart(fig_nat, use_container_width=True)
+
 # Bar chart
 fig_nationality = px.bar(
     nationality_counts,
