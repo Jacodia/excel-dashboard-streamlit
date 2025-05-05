@@ -18,11 +18,22 @@ df["Revised Completion"] = pd.to_datetime(df["Revised Completion"], errors="coer
 # --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Options")
 
-status = st.sidebar.multiselect(
-    "Select Project Status",
-    options=df["Project Status"].dropna().unique(),
-    default=df["Project Status"].dropna().unique()
-)
+status_options = df["Project Status"].dropna().unique().tolist()
+select_all_status = st.sidebar.checkbox("Select All Project Statuses", value=True)
+
+if select_all_status:
+    status = st.sidebar.multiselect(
+        "Select Project Status",
+        options=status_options,
+        default=status_options
+    )
+else:
+    status = st.sidebar.multiselect(
+        "Select Project Status",
+        options=status_options
+    )
+
+filtered_df = df[df["Project Status"].isin(status)] if status else df.copy()
 
 entities = st.sidebar.multiselect(
     "Select Public Entity",
