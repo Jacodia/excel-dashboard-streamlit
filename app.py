@@ -1,241 +1,192 @@
+import streamlit as st
 import pandas as pd
 import plotly.express as px
-import streamlit as st
 
 # --- Page Configuration ---
-st.set_page_config(page_title="📊 Project Dashboard", layout="wide")
-st.title("Central Procurement Board of Namibia: Monitoring and Evaluation Projects Dashboard")
+st.set_page_config(page_title="Strategic Implementation Dashboard", layout="wide", page_icon="📈")
+
+# --- Custom Styling ---
+st.markdown("""
+    <style>
+        .main {
+            background-color: #f8f9fa;
+        }
+        .stMetric {
+            background-color: #ffffff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            border-left: 5px solid #4e73df;
+        }
+        div[data-testid="stExpander"] {
+            border: none;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+            border-radius: 5px;
+            margin-bottom: 10px;
+            background-color: white;
+        }
+        h1, h2, h3 {
+            color: #2c3e50;
+        }
+    </style>
+""", unsafe_allow_html=True)
 
 # --- Load Data ---
-df = pd.read_excel('Excel_Dashboard_Data_Prepared.xlsx')
+@st.cache_data
+def load_data():
+    try:
+        # Load the CSV
+        df = pd.read_csv('project_data.csv')
+        # Ensure numeric conversion
+        df['Completion (%)'] = pd.to_numeric(df['Completion (%)'], errors='coerce').fillna(0)
+        # Ensure strings are handled correctly
+        df = df.astype(object).fillna("")
+        return df
+    except FileNotFoundError:
+        st.error("The file 'project_data.csv' was not found. Please ensure it is in the same directory.")
+        return pd.DataFrame()
 
-# --- Clean Columns and Convert Data Types ---
-df.columns = df.columns.str.strip()
-df["Expected completion Percentage"] = pd.to_numeric(df["Expected completion Percentage"], errors="coerce")
-df["Commencement (Contract Signing Date/site handover)"] = pd.to_datetime(df["Commencement (Contract Signing Date/site handover)"], errors="coerce")
-df["Revised Completion"] = pd.to_datetime(df["Revised Completion"], errors="coerce")
+df = load_data()
 
+if df.empty:
+    st.stop()
+
+# --- Header ---
+st.title("📋 Board Directives Implementation Tracker")
+st.markdown("### Strategic Implementation Plan & Progress Monitoring")
+st.markdown("---")
+
+# --- Sidebar Filters ---
 st.sidebar.header("🔍 Filter Options")
 
-status_options = df["Project Status"].dropna().unique()
+# Filter by Priority
+priority_options = sorted(list(set(df["Priority"].astype(str))))
+selected_priority = st.sidebar.multiselect(
+    "Select Priority Level",
+    options=priority_options,
+    default=priority_options
+)
 
-# Automatically select all options by default
-status = st.sidebar.multiselect(
-    "Select Project Status",
+# Filter by Status
+status_options = sorted(list(set(df["Status"].astype(str))))
+selected_status = st.sidebar.multiselect(
+    "Select Status",
     options=status_options,
-    default=status_options  # Default to all statuses selected
-)    
+    default=status_options
+)
 
-entities = st.sidebar.multiselect(
-    "Select Public Entity",
-    options=df["Public Entity's Name"].dropna().unique(),
-    default=df["Public Entity's Name"].dropna().unique()
+# Filter by Action Item (Parent Category)
+action_options = sorted(list(set(df["Action Item"].astype(str))))
+selected_action = st.sidebar.multiselect(
+    "Select Strategic Goal",
+    options=action_options,
+    default=action_options
 )
 
 # --- Apply Filters ---
 filtered_df = df[
-    (df["Project Status"].isin(status)) &
-    (df["Public Entity's Name"].isin(entities))
+    (df["Priority"].isin(selected_priority)) & 
+    (df["Action Item"].isin(selected_action)) &
+    (df["Status"].isin(selected_status))
 ]
 
-# --- Project Summary ---
-st.markdown("### 🧾 Project Summary")
-col1, col2, col3 = st.columns(3)
-col1.metric("📁 Total Projects", len(filtered_df))
-col2.metric("✅ Completed", len(filtered_df[filtered_df["Project Status"] == "Completed"]))
-col3.metric("🚧 In Progress", len(filtered_df[filtered_df["Project Status"] == "In Progress"]))
+# --- Key Metrics ---
+col1, col2, col3, col4 = st.columns(4)
 
-# --- Chart 1: Project Status Distribution ---
-fig1 = px.bar(
-    filtered_df,
-    x="Project Status",
-    title="Project Status Distribution",
-    color="Project Status",
-    labels={"count": "Number of Projects"},
-    color_discrete_sequence=["#F79646", "#C0C0C0", "#000000", "#FFFFFF"]
-)
-st.plotly_chart(fig1, use_container_width=True)
+total_tasks = len(filtered_df)
+avg_completion = filtered_df["Completion (%)"].mean()
+delayed_tasks = len(filtered_df[filtered_df["Status"] == "Delayed"])
+completed_tasks = len(filtered_df[filtered_df["Status"] == "Completed"])
 
-# --- Procurement Categories Overview ---
-st.markdown("Procurement Categories Overview")
+col1.metric("✅ Total Tasks", total_tasks)
+col2.metric("📊 Avg Completion", f"{avg_completion:.1f}%")
+col3.metric("⚠️ Delayed Tasks", delayed_tasks, delta=-delayed_tasks if delayed_tasks > 0 else 0, delta_color="inverse")
+col4.metric("🏆 Completed Tasks", completed_tasks)
 
-filtered_df["Total Budget / Contract Value in N$"] = pd.to_numeric(
-    filtered_df["Total Budget / Contract Value in N$"], errors="coerce"
-)
+st.markdown("---")
 
-category_summary = filtered_df.groupby("Procurement Category").agg(
-    Total_Projects=("Procurement Category", "count"),
-    Total_Value=("Total Budget / Contract Value in N$", "sum")
-).reset_index()
+# --- Dashboard Layout ---
 
-category_summary["Total_Value_Mil"] = category_summary["Total_Value"] / 1_000_000
-category_summary["Total_Value_Mil"] = category_summary["Total_Value_Mil"].apply(lambda x: f"N$ {x:,.2f}M")
+# Row 1: Charts
+c1, c2 = st.columns((2, 1))
 
-cols = st.columns(len(category_summary))
-colors = ["#F79646"]
+with c1:
+    st.subheader("Progress by Strategic Goal")
+    # Calculate average progress per Action Item
+    progress_summary = filtered_df.groupby("Action Item")["Completion (%)"].mean().reset_index().sort_values("Completion (%)", ascending=True)
+    
+    fig_prog = px.bar(
+        progress_summary,
+        x="Completion (%)",
+        y="Action Item",
+        orientation='h',
+        title="Average Completion Percentage per Goal",
+        color="Completion (%)",
+        color_continuous_scale="RdYlGn",
+        text_auto='.0f'
+    )
+    fig_prog.update_layout(xaxis_range=[0, 100])
+    st.plotly_chart(fig_prog, use_container_width=True)
 
-for idx, row in category_summary.iterrows():
-    with cols[idx]:
-        st.markdown(
-            f"""
-            <div style='background: linear-gradient(145deg, {colors[idx % len(colors)]}, #ffffff20); padding: 1em; border-radius: 10px; text-align: center'>
-                <h4 style='margin-bottom: 0.5em'>{row["Procurement Category"]}</h4>
-                <p><strong>{row["Total_Projects"]} Projects</strong></p>
-                <p><strong>{row["Total_Value_Mil"]}</strong></p>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
+with c2:
+    st.subheader("Project Status")
+    status_counts = filtered_df["Status"].value_counts().reset_index()
+    fig_status = px.pie(
+        status_counts,
+        values='count',
+        names='Status',
+        title="Task Status Distribution",
+        color='Status',
+        color_discrete_map={
+            "Completed": "#2ecc71",
+            "In Progress": "#3498db",
+            "Not Started": "#95a5a6",
+            "Delayed": "#e74c3c"
+        },
+        hole=0.4
+    )
+    st.plotly_chart(fig_status, use_container_width=True)
 
-# --- Chart 3: Projects by Public Entity ---
-project_count = filtered_df["Public Entity's Name"].value_counts().reset_index()
-project_count.columns = ["Public Entity", "Count"]
+# Row 2: Detailed Task List with Progress Bars
+st.subheader("📝 Detailed Action Plan & Monitoring")
 
-fig3 = px.pie(
-    project_count,
-    values="Count",
-    names="Public Entity",
-    title="Projects by Public Entity",
-    color_discrete_sequence=["#F79646", "#C0C0C0", "#FFFFFF", "#000000"]
-)
-fig3.update_traces(textinfo="label+value", textposition="inside")
-st.plotly_chart(fig3, use_container_width=True)
-
-# --- Chart 8: Completion Percentage per Project ---
-st.markdown("Completion Percentage per Project")
-completion_df = filtered_df[
-    (filtered_df["Projects in Execution"].notna()) &
-    (filtered_df["Average completion Percentage"].notna())
-]
-completion_df["Average completion Percentage"] = pd.to_numeric(
-    completion_df["Average completion Percentage"], errors="coerce"
-)
-
-fig8 = px.bar(
-    completion_df,
-    x="Average completion Percentage",
-    y="Projects in Execution",
-    orientation="h",
-    title="Completion Percentage per Project",
-    labels={"Average completion Percentage": "Completion (%)", "Projects in Execution": "Project"},
-    color="Average completion Percentage",
-    color_continuous_scale=["#FFFFFF", "#C0C0C0", "#F79646", "#000000"]
-)
-fig8.update_layout(height=800)
-st.plotly_chart(fig8, use_container_width=True)
-
-# --- Chart 6: Projects by Contractor ---
-st.markdown("Total Projects by Contractor/Service Provider")
-contractor_counts = filtered_df["Contractor/ Service Provider"].value_counts().reset_index()
-contractor_counts.columns = ["Contractor/Service Provider", "Total Projects"]
-
-fig6 = px.bar(
-    contractor_counts,
-    x="Contractor/Service Provider",
-    y="Total Projects",
-    title="Total Projects by Contractor/Service Provider",
-    text="Total Projects",
-    color="Contractor/Service Provider",
-    color_discrete_sequence=["#F79646", "#C0C0C0", "#000000", "#FFFFFF"]
-)
-fig6.update_traces(textposition="inside")
-fig6.update_layout(xaxis_tickangle=-45, showlegend=False, height=600)
-st.plotly_chart(fig6, use_container_width=True)
-
-# --- Chart: Project Duration ---
-st.markdown("Project Duration: Planned vs Actual (Days)")
-duration_df = filtered_df[
-    (filtered_df["Projects in Execution"].notna()) &
-    (filtered_df["Duration in days"].notna()) &
-    (filtered_df["Time Lapse in days"].notna())
-].copy()
-duration_df["Duration in days"] = pd.to_numeric(duration_df["Duration in days"], errors="coerce")
-duration_df["Time Lapse in days"] = pd.to_numeric(duration_df["Time Lapse in days"], errors="coerce")
-
-melted_duration = duration_df.melt(
-    id_vars=["Projects in Execution"],
-    value_vars=["Duration in days", "Time Lapse in days"],
-    var_name="Type",
-    value_name="Days"
-)
-melted_duration["Type"] = melted_duration["Type"].replace({
-    "Duration in days": "Planned Duration",
-    "Time Lapse in days": "Actual Duration"
-})
-
-fig_duration = px.bar(
-    melted_duration,
-    x="Days",
-    y="Projects in Execution",
-    color="Type",
-    barmode="group",
-    orientation="h",
-    title="Project Duration: Planned vs Actual",
-    labels={"Days": "Duration (days)", "Projects in Execution": "Project"},
-    color_discrete_map={
-        "Planned Duration": "#F79646",
-        "Actual Duration": "#C0C0C0"
-    }
-)
-fig_duration.update_layout(height=800)
-st.plotly_chart(fig_duration, use_container_width=True)
-
-# --- Chart: Contractor Nationality ---
-st.markdown("Count of Service Provider Nationalities")
-nationality_counts = filtered_df["Contractor/ Service Provider Nationality"].value_counts().reset_index()
-nationality_counts.columns = ["Nationality", "Project Count"]
-
-fig_nat = px.bar(
-    nationality_counts,
-    x="Nationality",
-    y="Project Count",
-    title="Projects by Contractor Nationality",
-    text="Project Count",
-    color_discrete_sequence=["#F79646", "#C0C0C0", "#FFFFFF", "#000000"]
-)
-fig_nat.update_traces(textposition="inside")
-fig_nat.update_layout(xaxis_tickangle=-45)
-st.plotly_chart(fig_nat, use_container_width=True)
-
-# --- Chart 7: Budget vs Actual ---
-st.markdown("Budget vs Actual Cost by Project")
-budget_vs_actual_df = filtered_df[
-    (filtered_df["Projects in Execution"].notna()) &
-    (filtered_df["Total Budget / Contract Value in N$"].notna()) &
-    (filtered_df["Actual Cost to Date (Mil)"].notna())
-]
-
-melted_df = budget_vs_actual_df.melt(
-    id_vars="Projects in Execution",
-    value_vars=["Total Budget / Contract Value in N$", "Actual Cost to Date (Mil)"],
-    var_name="Metric",
-    value_name="Amount"
+st.dataframe(
+    filtered_df[[
+        "RAG Rating", "Priority", "Action Item", "Specific Action", "Status", "Completion (%)", "Progress Notes"
+    ]], 
+    use_container_width=True,
+    column_config={
+        "RAG Rating": st.column_config.TextColumn(
+            "Health",
+            help="Red (Critical), Amber (Warning), Green (On Track)",
+            width="small"
+        ),
+        "Priority": st.column_config.TextColumn("Priority", width="small"),
+        "Action Item": st.column_config.TextColumn("Goal", width="medium"),
+        "Specific Action": st.column_config.TextColumn("Specific Task", width="large"),
+        "Status": st.column_config.SelectboxColumn(
+            "Status",
+            options=["Not Started", "In Progress", "Completed", "Delayed"],
+            width="medium"
+        ),
+        "Completion (%)": st.column_config.ProgressColumn(
+            "Progress",
+            format="%d%%",
+            min_value=0,
+            max_value=100,
+            width="medium"
+        ),
+        "Progress Notes": st.column_config.TextColumn("Latest Notes", width="large"),
+    },
+    hide_index=True
 )
 
-fig7 = px.bar(
-    melted_df,
-    y="Projects in Execution",
-    x="Amount",
-    color="Metric",
-    orientation="h",
-    title="Budget vs Actual Cost by Project (Stacked)",
-    labels={"Amount": "Amount (N$ Mil)", "Projects in Execution": "Project"},
-    color_discrete_map={
-        "Total Budget / Contract Value in N$": "#F79646",
-        "Actual Cost to Date (Mil)": "#C0C0C0"
-    }
-)
-fig7.update_layout(barmode="stack", height=800)
-st.plotly_chart(fig7, use_container_width=True)
-
-# --- View Filtered Data ---
-with st.expander("🧮 View Filtered Data Table"):
-    st.dataframe(filtered_df)
-
-# --- Download Button ---
+# --- Download ---
+st.markdown("---")
+csv = filtered_df.to_csv(index=False).encode('utf-8')
 st.download_button(
-    label="📥 Download Filtered Data",
-    data=filtered_df.to_csv(index=False),
-    file_name="filtered_projects.csv",
+    label="📥 Download Updated Data (with Status)",
+    data=csv,
+    file_name="project_data_monitored.csv",
     mime="text/csv",
 )
