@@ -35,8 +35,12 @@ st.markdown("""
 @st.cache_data
 def load_data():
     try:
-        # Load the CSV
-        df = pd.read_csv('project_data.csv')
+        # Try loading with UTF-8 first, fallback to Latin-1 if encoding error occurs
+        try:
+            df = pd.read_csv('project_data.csv', encoding='utf-8')
+        except UnicodeDecodeError:
+            df = pd.read_csv('project_data.csv', encoding='ISO-8859-1')
+            
         # Ensure numeric conversion
         df['Completion (%)'] = pd.to_numeric(df['Completion (%)'], errors='coerce').fillna(0)
         # Ensure strings are handled correctly
